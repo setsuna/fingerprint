@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '指纹识别系统',
-  description: '基于Next.js 14的指纹识别应用',
+  title: '硬件综合平台',
+  description: '集成指纹识别、身份证识别和高拍仪等功能的硬件测试平台',
 }
 
 export default function RootLayout({
@@ -13,7 +13,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN" className="h-full">
-      <body className="h-full bg-gray-50">{children}</body>
+      <body className="h-full bg-slate-50">
+        <div className="relative h-screen w-full overflow-hidden bg-dot-pattern">
+          {children}
+        </div>
+      </body>
     </html>
   )
 }

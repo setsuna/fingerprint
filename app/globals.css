@@ -1,3 +1,6 @@
+/* src/app/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,9 +11,7 @@
   }
   
   body {
-    @apply max-w-full overflow-x-hidden;
-    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-      Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    @apply max-w-full overflow-hidden font-sans text-brand-dark;
   }
   
   a {
@@ -20,4 +21,62 @@
   button {
     @apply cursor-pointer;
   }
+}
+
+.bg-dot-pattern {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* 卡片组件样式 */
+.card {
+  @apply bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100;
+}
+
+/* 滑动容器 */
+.swipe-container {
+  @apply w-full h-full flex transition-transform duration-300 ease-out;
+}
+
+.page-container {
+  @apply min-w-full h-full flex flex-col;
+}
+
+/* 导航指示器 */
+.nav-indicators {
+  @apply absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3;
+}
+
+.nav-indicator {
+  @apply w-3 h-3 rounded-full bg-gray-300 transition-all duration-300;
+}
+
+.nav-indicator.active {
+  @apply bg-brand-red w-8;
+}
+
+/* 自定义滑块样式 */
+input[type="range"] {
+  @apply h-2 rounded-lg appearance-none cursor-pointer bg-gray-200;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-5 h-5 rounded-full bg-brand-red border-2 border-white;
+}
+
+/* 超宽屏适配 */
+.ultrawide-layout {
+  @apply max-w-[2560px] h-screen mx-auto flex flex-col;
+}
+
+.brand-logo {
+  @apply text-lg font-bold flex items-center;
+}
+
+.brand-dot {
+  @apply w-2 h-2 rounded-full bg-brand-red mr-2;
+}
+
+.page-indicator {
+  @apply flex items-center justify-center space-x-1 mt-4;
 }
