@@ -34,8 +34,7 @@ export default function Home() {
       title: '高拍仪',
       description: '高清文档扫描与图像处理',
       path: '/camera',
-      color: 'bg-purple-500',
-      soon: true
+      color: 'bg-purple-500'
     },
     {
       icon: Download,
@@ -58,9 +57,32 @@ export default function Home() {
             </div>
             <span className="text-sm text-gray-500 ml-3">集成多种硬件测试，简化操作流程</span>
           </div>
+          
+          <button 
+            className="flex items-center text-sm bg-[#2EA44F] hover:bg-[#2C974B] text-white px-3 py-1.5 rounded-full transition-colors"
+            onClick={() => {
+              alert('查看源代码功能');
+            }}
+          >
+            <Code size={14} className="mr-1" />
+            查看源码
+          </button>
         </div>
         
-      
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            欢迎使用硬件测试平台
+          </h1>
+          <p className="text-gray-600 text-lg max-w-2xl">
+            这是一个集成指纹识别、身份证识别和高拍仪功能的综合测试平台，通过简洁直观的界面帮助您高效完成硬件测试任务。
+          </p>
+        </motion.div>
+        
         {/* 功能卡片 - 使用table布局以确保在Chrome 102中显示正常 */}
         <div className="w-full overflow-auto" style={{display: 'table'}}>
           <div style={{display: 'table-row-group'}}>

@@ -1,4 +1,3 @@
-// src/app/fingerprint/page.tsx
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
