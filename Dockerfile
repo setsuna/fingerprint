@@ -1,18 +1,19 @@
 # 依赖阶段 - 安装所有依赖
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
 # 构建阶段 - 构建Next.js应用
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 修改next.config.js确保生成standalone输出
-# 如果你的next.config.js已经包含此配置，可以跳过此步骤
-RUN if [ -f next.config.js ]; then \
+# 修改next.config.ts确保生成standalone输出
+RUN if [ -f next.config.ts ]; then \
+      sed -i 's|const nextConfig: NextConfig = {|const nextConfig: NextConfig = { output: "standalone",|' next.config.ts; \
+    elif [ -f next.config.js ]; then \
       sed -i '/module.exports/c\module.exports = { output: "standalone", ...(' "$(cat next.config.js)" || {} })' next.config.js; \
     else \
       echo 'module.exports = { output: "standalone" }' > next.config.js; \
@@ -21,7 +22,7 @@ RUN if [ -f next.config.js ]; then \
 RUN npm run build
 
 # 运行阶段 - 只包含生产所需文件
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV production
 
@@ -39,6 +40,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
+
+# 添加健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
 # 启动应用
 CMD ["node", "server.js"]
