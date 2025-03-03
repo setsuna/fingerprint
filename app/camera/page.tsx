@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { Camera, Code, RefreshCw, Rotate3D, Save, ImagePlus, CreditCard, Layers } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Camera, Code, RefreshCw, Rotate3D, Save, ImagePlus, CreditCard, Layers, X } from 'lucide-react'
 import PageNavigator from '@/app/components/PageNavigator'
 import * as cameraService from '@/app/services/cameraService'
 
@@ -18,10 +18,8 @@ export default function CameraPage() {
   const [isCorrectingPerspective, setIsCorrectingPerspective] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isDeviceFound, setIsDeviceFound] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
   
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const frameCountRef = useRef<number>(0);
-
   // 设备查找
   const findDevices = async () => {
     setIsLoading(true);
@@ -58,20 +56,19 @@ export default function CameraPage() {
     setSelectedResolution(parseInt(e.target.value));
   };
 
+  // 直接更新视频帧的回调函数
+  const updateVideoFrame = (frameData: string) => {
+    setVideoFrame(frameData);
+  };
+
   // 开始视频预览
   const startVideo = async () => {
     if (isVideoStarted) return;
     
     try {
-      await cameraService.startPreview(selectedDevice, selectedResolution);
+      // 传递回调函数给startPreview
+      await cameraService.startPreview(selectedDevice, selectedResolution, updateVideoFrame);
       setIsVideoStarted(true);
-      
-      // 启动定时器获取帧
-      frameCountRef.current = 0;
-      timerRef.current = setInterval(() => {
-        getFrame();
-        frameCountRef.current += 1;
-      }, 300);
     } catch (error) {
       console.error('启动视频失败:', error);
       alert('启动视频失败，请检查设备连接');
@@ -85,32 +82,10 @@ export default function CameraPage() {
     try {
       await cameraService.stopPreview(selectedDevice);
       setIsVideoStarted(false);
-      
-      // 清除定时器
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-      frameCountRef.current = 0;
+      // 清空视频帧
+      setVideoFrame('');
     } catch (error) {
       console.error('停止视频失败:', error);
-    }
-  };
-
-  // 获取视频帧
-  const getFrame = async () => {
-    try {
-      const frameData = await cameraService.getFrame();
-      setVideoFrame(frameData);
-    } catch (error) {
-      console.error('获取视频帧出错:', error);
-      
-      // 出错时停止视频
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-        setIsVideoStarted(false);
-      }
     }
   };
 
@@ -194,10 +169,6 @@ export default function CameraPage() {
   // 组件卸载时清理
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      
       // 如果视频已经启动，则停止
       if (isVideoStarted) {
         cameraService.stopPreview(selectedDevice).catch(console.error);
@@ -220,9 +191,7 @@ export default function CameraPage() {
           
           <button 
             className="flex items-center text-sm bg-[#2EA44F] hover:bg-[#2C974B] text-white px-3 py-1.5 rounded-full transition-colors"
-            onClick={() => {
-              alert('查看源代码功能');
-            }}
+            onClick={() => setShowModal(true)}
           >
             <Code size={14} className="mr-1" />
             查看源码
@@ -306,7 +275,7 @@ export default function CameraPage() {
                 </div>
                 
                 <button 
-                  className="mb-2 w-full py-2 px-4 rounded-lg flex items-center justify-center text-white bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  className="mb-2 w-full py-2 px-4 rounded-lg flex items-center justify-center text-white bg-yellow-500 hover:bg-yellow-600"
                   onClick={findDevices}
                   disabled={isVideoStarted || isLoading}
                 >
@@ -320,7 +289,7 @@ export default function CameraPage() {
                       ? 'bg-gray-300 cursor-not-allowed' 
                       : isVideoStarted 
                         ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-purple-500 hover:bg-purple-600'
+                        : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                   onClick={startVideo}
                   disabled={!isDeviceFound || isVideoStarted}
@@ -462,6 +431,50 @@ export default function CameraPage() {
       
       {/* 页面导航器 */}
       <PageNavigator />
+
+      {/* 源码技术选择模态框 */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-96 max-w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">选择查看的技术栈</h3>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-600 mb-4">请选择您想查看的源代码技术栈：</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  className="p-4 border rounded-lg hover:bg-blue-50 transition-colors flex flex-col items-center"
+                  onClick={() => {
+                    alert('查看 React 技术栈源码');
+                    setShowModal(false);
+                  }}
+                >
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white mb-2">R</div>
+                  <span className="font-medium">React</span>
+                </button>
+                
+                <button 
+                  className="p-4 border rounded-lg hover:bg-green-50 transition-colors flex flex-col items-center"
+                  onClick={() => {
+                    alert('查看 Vue 技术栈源码');
+                    setShowModal(false);
+                  }}
+                >
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white mb-2">V</div>
+                  <span className="font-medium">Vue</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
