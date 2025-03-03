@@ -27,7 +27,7 @@ export default function Home() {
       description: '快速读取身份证信息及照片',
       path: '/idcard',
       color: 'bg-green-500',
-      soon: true
+      soon: false // 修改为false，启用此功能
     },
     {
       icon: Camera,
