@@ -118,13 +118,15 @@ async function fetchFrameAndUpdate(): Promise<void> {
   try {
     const frameData = await getFrame();
     
-    // 如果有回调函数，则调用它更新UI
-    if (currentFrameCallback) {
+    // 如果有回调函数且获取到了有效的帧数据，则调用回调更新UI
+    if (currentFrameCallback && frameData) {
       currentFrameCallback(frameData);
     }
+    // 如果frameData为null（"请稍候..."的情况），则不执行任何操作，等待下一次定时器触发
   } catch (error) {
     console.error('获取视频帧出错:', error);
-    // 出错时清除定时器
+    // 只有在严重错误时才清除定时器
+    // "请稍候"的情况会在getFrame中处理，不会抛出到这里
     if (frameTimer) {
       clearInterval(frameTimer);
       frameTimer = null;
@@ -204,7 +206,6 @@ export async function stopPreview(dev_idx: number): Promise<void> {
     throw error;
   }
 }
-
 /**
  * 获取视频帧
  * @returns 帧数据Promise
@@ -212,12 +213,30 @@ export async function stopPreview(dev_idx: number): Promise<void> {
 export async function getFrame(): Promise<string> {
   try {
     const response = await fetch(`${API_BASE_URL}/getFrame`);
-    const data: APIResponse<FrameData> = await response.json();
+    const responseText = await response.text();
     
-    if (data.returnCode === 0 && data.data && data.data.img) {
-      return data.data.img;
+    try {
+      // 尝试解析JSON响应
+      const data = JSON.parse(responseText);
+      
+      // 检查标准返回码
+      if (data.returnCode === 0 && data.data && data.data.img) {
+        return data.data.img;
+      }
+      
+      // 检查非标准返回码 "21returnCode" 
+      if ("21returnCode" in data && data["21returnCode"] === -1) {
+        // 这是"请稍候..."的情况，返回null表示需要继续尝试
+        console.log("收到'请稍候...'的响应，将继续尝试获取帧");
+        return data.returnMsg;
+      }
+      
+      // 其他错误情况
+      throw new Error(data.returnMsg || '获取视频帧失败');
+    } catch (parseError) {
+      console.error('解析响应出错:', parseError, '原始响应:', responseText);
+      throw new Error('解析响应失败');
     }
-    throw new Error(data.returnMsg || '获取视频帧失败');
   } catch (error) {
     console.error('获取视频帧出错:', error);
     throw error;
