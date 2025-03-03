@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { getFingerprint } from '@/app/services/fingerprintService'
 import { 
   Fingerprint, 
@@ -17,7 +17,6 @@ import PageNavigator from '@/app/components/PageNavigator'
 
 export default function FingerprintPage() {
   const [fingerImage, setFingerImage] = useState<string>('')
-  const [fingerCode, setFingerCode] = useState<string>('')
   const [fingerChar, setFingerChar] = useState<string>('')
   const [imageQuality, setImageQuality] = useState<string>('')
   const [result, setResult] = useState<string>('等待操作')
@@ -63,7 +62,7 @@ export default function FingerprintPage() {
     if (scanningRef.current) return
     
     // 重置状态
-    setFingerCode('')
+    //setFingerCode('')
     setFingerChar('')
     setFingerImage('')
     setResult('请按压指纹，等待采集...')
@@ -106,7 +105,7 @@ export default function FingerprintPage() {
       
       if (response.image) {
         setFingerImage(`data:image/png;base64,${response.image}`)
-        setFingerCode(response.image)
+        //setFingerCode(response.image)
       }
       
       if (response.characteristic) {
@@ -394,7 +393,7 @@ export default function FingerprintPage() {
                     
                     <div className="flex">
                       <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center mr-3 flex-shrink-0 text-gray-600 font-medium text-sm">3</div>
-                      <p className="text-sm text-gray-600">点击"采集指纹"按钮</p>
+                      <p className="text-sm text-gray-600">点击 采集指纹 按钮</p>
                     </div>
                     
                     <div className="flex">

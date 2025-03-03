@@ -184,7 +184,7 @@ export default function IdCardPage() {
                       </div>
                       <div className="flex">
                         <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center mr-2 flex-shrink-0 text-gray-600 font-medium text-xs">2</div>
-                        <p className="text-sm text-gray-600">点击"开始读卡"按钮</p>
+                        <p className="text-sm text-gray-600">点击 开始读卡 按钮</p>
                       </div>
                       <div className="flex">
                         <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center mr-2 flex-shrink-0 text-gray-600 font-medium text-xs">3</div>
