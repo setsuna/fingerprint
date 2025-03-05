@@ -1,398 +1,391 @@
 'use client'
 
-import { useState } from 'react'
-import { Download, FileDown, Monitor, HardDrive, Smartphone, Fingerprint, CreditCard, Camera, ChevronDown, ChevronRight, Search, Filter } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { RefreshCw, HardDrive } from 'lucide-react'
 import PageNavigator from '@/app/components/PageNavigator'
+import * as SynologyService from '@/app/services/enhancedSynologyService'
+import SynologyConfig from '@/app/config/synologyConfig'
+import { sortFilesByName, sortFilesBySize, sortFilesByModifiedTime } from '@/app/utils/fileUtils'
 
-// Define interface for driver category and driver item
-interface DriverItem {
-  id: string;
-  name: string;
-  icon: any;
-  version: string;
-  date: string;
-  size: string;
-  os: string[];
-  description: string;
-  downloadUrl: string;
-}
-
-interface DriverSubCategory {
-  id: string;
-  name: string;
-  items: DriverItem[];
-}
-
-interface DriverCategory {
-  id: string;
-  name: string;
-  icon: any;
-  color: string;
-  subCategories: DriverSubCategory[];
-}
-
-// Mock data structure based on potential driver list.xlsx structure
-const driverCategories: DriverCategory[] = [
-  {
-    id: 'fingerprint',
-    name: '指纹识别',
-    icon: Fingerprint,
-    color: 'text-brand-red',
-    subCategories: [
-      {
-        id: 'fingerprint-scanners',
-        name: '指纹扫描仪',
-        items: [
-          {
-            id: 'zk4500',
-            name: 'ZK4500指纹采集器驱动',
-            icon: FileDown,
-            version: 'v3.2.1',
-            date: '2024-12-10',
-            size: '12.5 MB',
-            os: ['Windows 10', '麒麟2303', 'UOS'],
-            description: '适用于ZK4500指纹采集器的最新版本驱动程序，支持Windows和国产操作系统。',
-            downloadUrl: '#zk4500-driver'
-          },
-          {
-            id: 'uru4500',
-            name: 'URU4500指纹采集器驱动',
-            icon: FileDown,
-            version: 'v2.1.0',
-            date: '2024-11-25',
-            size: '10.2 MB',
-            os: ['Windows 10/11', 'Windows 7/8'],
-            description: '适用于URU4500指纹采集器的驱动，兼容Windows操作系统。',
-            downloadUrl: '#uru4500-driver'
-          }
-        ]
-      },
-      {
-        id: 'fingerprint-sdk',
-        name: 'SDK开发包',
-        items: [
-          {
-            id: 'fingerprint-sdk',
-            name: '指纹识别SDK',
-            icon: FileDown,
-            version: 'v4.0.2',
-            date: '2024-12-15',
-            size: '25.7 MB',
-            os: ['Windows 10/11', '麒麟2303'],
-            description: '指纹识别开发包，包含API接口文档和示例代码。',
-            downloadUrl: '#fingerprint-sdk'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'idcard',
-    name: '身份证识别',
-    icon: CreditCard,
-    color: 'text-green-500',
-    subCategories: [
-      {
-        id: 'idcard-readers',
-        name: '身份证读卡器',
-        items: [
-          {
-            id: 'huashi-cvr100u',
-            name: '华视CVR-100U读卡器驱动',
-            icon: Monitor,
-            version: 'v2.5.0',
-            date: '2024-11-25',
-            size: '8.3 MB',
-            os: ['Windows 10/11', 'Windows 7/8', '麒麟2303', 'UOS'],
-            description: '华视CVR-100U身份证读卡器驱动程序，支持Windows和国产操作系统。',
-            downloadUrl: '#huashi-driver'
-          },
-          {
-            id: 'deka-d2',
-            name: '德卡D2读卡器驱动',
-            icon: Monitor,
-            version: 'v1.8.3',
-            date: '2024-10-30',
-            size: '7.5 MB',
-            os: ['Windows 10/11', '麒麟2303'],
-            description: '德卡D2身份证读卡器驱动程序。',
-            downloadUrl: '#deka-driver'
-          }
-        ]
-      },
-      {
-        id: 'idcard-sdk',
-        name: 'SDK开发包',
-        items: [
-          {
-            id: 'idcard-sdk',
-            name: '身份证识别SDK',
-            icon: FileDown,
-            version: 'v3.1.5',
-            date: '2024-12-05',
-            size: '18.3 MB',
-            os: ['Windows 10/11', '麒麟2303', 'UOS'],
-            description: '身份证识别开发包，包含API接口和示例程序。',
-            downloadUrl: '#idcard-sdk'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'camera',
-    name: '高拍仪',
-    icon: Camera,
-    color: 'text-purple-500',
-    subCategories: [
-      {
-        id: 'camera-drivers',
-        name: '高拍仪驱动',
-        items: [
-          {
-            id: 'liangtian',
-            name: '良田高拍仪驱动',
-            icon: HardDrive,
-            version: 'v1.8.3',
-            date: '2024-12-15',
-            size: '15.7 MB',
-            os: ['Windows 10/11', 'Windows 7/8'],
-            description: '良田品牌高拍仪设备驱动程序。',
-            downloadUrl: '#liangtian-driver'
-          },
-          {
-            id: 'founder',
-            name: '方正高拍仪驱动',
-            icon: HardDrive,
-            version: 'v2.0.1',
-            date: '2024-11-10',
-            size: '14.2 MB',
-            os: ['Windows 10/11', '麒麟2303'],
-            description: '方正品牌高拍仪设备驱动程序。',
-            downloadUrl: '#founder-driver'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'printer',
-    name: '打印机',
-    icon: Monitor,
-    color: 'text-blue-500',
-    subCategories: [
-      {
-        id: 'label-printers',
-        name: '标签打印机',
-        items: [
-          {
-            id: 'zebra',
-            name: 'Zebra标签打印机驱动',
-            icon: HardDrive,
-            version: 'v2.5.1',
-            date: '2024-12-01',
-            size: '22.5 MB',
-            os: ['Windows 10/11', 'Windows 7/8'],
-            description: 'Zebra品牌标签打印机驱动程序。',
-            downloadUrl: '#zebra-driver'
-          }
-        ]
-      },
-      {
-        id: 'thermal-printers',
-        name: '热敏打印机',
-        items: [
-          {
-            id: 'epson',
-            name: 'Epson热敏打印机驱动',
-            icon: HardDrive,
-            version: 'v1.9.3',
-            date: '2024-11-15',
-            size: '18.3 MB',
-            os: ['Windows 10/11', 'Windows 7/8', '麒麟2303'],
-            description: 'Epson品牌热敏打印机驱动程序。',
-            downloadUrl: '#epson-driver'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'other',
-    name: '其他设备',
-    icon: Smartphone,
-    color: 'text-orange-500',
-    subCategories: [
-      {
-        id: 'barcode-scanners',
-        name: '条码扫描器',
-        items: [
-          {
-            id: 'honeywell',
-            name: 'Honeywell条码扫描器驱动',
-            icon: HardDrive,
-            version: 'v1.5.2',
-            date: '2024-10-20',
-            size: '9.8 MB',
-            os: ['Windows 10/11', 'Windows 7/8'],
-            description: 'Honeywell品牌条码扫描器驱动程序。',
-            downloadUrl: '#honeywell-driver'
-          }
-        ]
-      }
-    ]
-  }
-];
-
-// Component to render a single driver item
-const DriverCard = ({ driver, osFilter }: { driver: DriverItem, osFilter: string }) => {
-  // Check if this driver supports the filtered OS
-  const isSupported = osFilter === 'all' || driver.os.some(os => os.includes(osFilter));
-  
-  // If filtering is active and this driver doesn't match, don't render it
-  if (osFilter !== 'all' && !isSupported) return null;
-  
-  const handleDownload = () => {
-    alert(`开始下载 ${driver.name}`);
-  };
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="card p-6 mb-4"
-    >
-      <div className="flex items-start">
-        <div className="bg-gray-100 p-3 rounded-lg">
-          <driver.icon size={28} className="text-brand-red" />
-        </div>
-        
-        <div className="ml-4 flex-1">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-semibold">{driver.name}</h3>
-              <p className="text-sm text-gray-500 mt-1">{driver.description}</p>
-            </div>
-            
-            <button
-              onClick={handleDownload}
-              className="bg-brand-red hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
-            >
-              <Download size={16} className="mr-1" />
-              下载
-            </button>
-          </div>
-          
-          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">版本:</span>
-              <span className="font-medium">{driver.version}</span>
-            </div>
-            
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">发布日期:</span>
-              <span className="font-medium">{driver.date}</span>
-            </div>
-            
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">文件大小:</span>
-              <span className="font-medium">{driver.size}</span>
-            </div>
-            
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">支持系统:</span>
-              <span className="font-medium">{driver.os.join(', ')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Component to render a subcategory with its driver items
-const DriverSubCategory = ({ 
-  subCategory, 
-  osFilter,
-  expanded,
-  toggleExpand
-}: { 
-  subCategory: DriverSubCategory, 
-  osFilter: string,
-  expanded: boolean,
-  toggleExpand: () => void
-}) => {
-  return (
-    <div className="mb-4">
-      <button 
-        onClick={toggleExpand}
-        className="w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-3 rounded-lg transition-colors mb-2"
-      >
-        <span className="font-medium text-gray-700">{subCategory.name}</span>
-        {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button>
-      
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="pl-4 border-l-2 border-gray-100"
-          >
-            {subCategory.items.map(driver => (
-              <DriverCard key={driver.id} driver={driver} osFilter={osFilter} />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
+// 导入创建的组件
+import DirectorySidebar from './DirectorySidebar'
+import TabNavigation from './TabNavigation'
+import Breadcrumbs from './Breadcrumbs'
+import SearchBar from './SearchBar'
+import FileList from './FileList'
+import FileGridView from './FileGridView'
+import { FileLargeCard } from './FileGridView'
+import FileDetails from './FileDetails'
+import ViewSelector, { ViewMode, SortType, SortDirection } from './ViewSelector'
+import { FullScreenLoader, InlineLoader } from './LoadingSpinner'
+import ErrorMessage from './ErrorMessage'
 
 export default function DriverPage() {
-  // State for active tab (category)
-  const [activeCategory, setActiveCategory] = useState<string>(driverCategories[0].id);
+  // 状态管理
+  const [loading, setLoading] = useState<boolean>(true);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // State for expanded subcategories
-  const [expandedSubCategories, setExpandedSubCategories] = useState<Record<string, boolean>>({});
+  // 目录和文件数据
+  const [firstLevelDirs, setFirstLevelDirs] = useState<SynologyService.FileItem[]>([]);
+  const [secondLevelDirs, setSecondLevelDirs] = useState<SynologyService.FileItem[]>([]);
+  const [thirdLevelItems, setThirdLevelItems] = useState<SynologyService.FileItem[]>([]);
   
-  // State for OS filter
-  const [osFilter, setOsFilter] = useState<string>('all');
+  // 当前选中的目录
+  const [selectedFirstLevel, setSelectedFirstLevel] = useState<SynologyService.FileItem | null>(null);
+  const [selectedSecondLevel, setSelectedSecondLevel] = useState<SynologyService.FileItem | null>(null);
   
-  // State for search
+  // 当前选中的文件（用于显示详情）
+  const [selectedFile, setSelectedFile] = useState<SynologyService.FileItem | null>(null);
+  
+  // 面包屑导航路径
+  const [breadcrumbs, setBreadcrumbs] = useState<{name: string; path: string}[]>([
+    { name: '根目录', path: SynologyConfig.ROOT_PATH }
+  ]);
+  
+  // 搜索关键字
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Get the active category data
-  const activeCategoryData = driverCategories.find(cat => cat.id === activeCategory);
+  // 视图模式和排序
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [sortType, setSortType] = useState<SortType>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
-  // Toggle subcategory expansion
-  const toggleSubCategory = (subCategoryId: string) => {
-    setExpandedSubCategories(prev => ({
-      ...prev,
-      [subCategoryId]: !prev[subCategoryId]
-    }));
+  // 初始化 - 获取一级目录
+  useEffect(() => {
+    async function initData() {
+      try {
+        setInitialLoading(true);
+        setError(null);
+        
+        // 获取一级目录
+        const firstLevel = await SynologyService.getFirstLevelDirectories();
+        setFirstLevelDirs(firstLevel);
+        
+        // 如果有一级目录，默认选中第一个
+        if (firstLevel.length > 0) {
+          setSelectedFirstLevel(firstLevel[0]);
+        }
+        
+      } catch (err) {
+        if (err instanceof SynologyService.SynologyApiError) {
+          setError(`初始化失败: ${err.message}`);
+        } else {
+          setError('初始化失败，请检查网络连接或刷新页面重试');
+        }
+        console.error('初始化异常:', err);
+      } finally {
+        setInitialLoading(false);
+      }
+    }
+    
+    initData();
+    
+    // 组件卸载时登出
+    return () => {
+      SynologyService.logout();
+    };
+  }, []);
+  
+  // 选择一级目录后，获取二级目录
+  useEffect(() => {
+    async function loadSecondLevel() {
+      if (!selectedFirstLevel) return;
+      
+      try {
+        setLoading(true);
+        setSecondLevelDirs([]);
+        setThirdLevelItems([]);
+        setSelectedSecondLevel(null);
+        
+        // 更新面包屑
+        setBreadcrumbs([
+          { name: '根目录', path: SynologyConfig.ROOT_PATH },
+          { name: selectedFirstLevel.name, path: selectedFirstLevel.path }
+        ]);
+        
+        // 获取二级目录
+        const secondLevel = await SynologyService.getSecondLevelDirectories(selectedFirstLevel.path);
+        setSecondLevelDirs(secondLevel);
+        
+        // 如果有二级目录，默认选中第一个并加载其内容
+        if (secondLevel.length > 0) {
+          setSelectedSecondLevel(secondLevel[0]);
+        }
+        
+      } catch (err) {
+        if (err instanceof SynologyService.SynologyApiError) {
+          setError(`加载目录失败: ${err.message}`);
+        } else {
+          setError('加载二级目录失败');
+        }
+        console.error('加载二级目录异常:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadSecondLevel();
+  }, [selectedFirstLevel]);
+  
+  // 选择二级目录后，获取三级文件列表
+  useEffect(() => {
+    async function loadThirdLevel() {
+      if (!selectedSecondLevel) return;
+      
+      try {
+        setLoading(true);
+        setThirdLevelItems([]);
+        
+        // 更新面包屑
+        if (selectedFirstLevel) {
+          setBreadcrumbs([
+            { name: '根目录', path: SynologyConfig.ROOT_PATH },
+            { name: selectedFirstLevel.name, path: selectedFirstLevel.path },
+            { name: selectedSecondLevel.name, path: selectedSecondLevel.path }
+          ]);
+        }
+        
+        // 获取三级文件列表
+        const thirdLevel = await SynologyService.getThirdLevelItems(selectedSecondLevel.path);
+        setThirdLevelItems(thirdLevel);
+        
+      } catch (err) {
+        if (err instanceof SynologyService.SynologyApiError) {
+          setError(`加载文件列表失败: ${err.message}`);
+        } else {
+          setError('加载文件列表失败');
+        }
+        console.error('加载文件列表异常:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadThirdLevel();
+  }, [selectedSecondLevel, selectedFirstLevel]);
+  
+  // 处理排序和筛选
+  const filteredAndSortedFiles = (() => {
+    // 先筛选
+    let result = thirdLevelItems.filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    // 再排序
+    if (sortType === 'name') {
+      result = sortFilesByName(result, sortDirection === 'asc');
+    } else if (sortType === 'size') {
+      result = sortFilesBySize(result, sortDirection === 'asc');
+    } else if (sortType === 'time') {
+      result = sortFilesByModifiedTime(result, sortDirection === 'asc');
+    }
+    
+    return result;
+  })();
+  
+  // 处理一级目录点击
+  const handleFirstLevelClick = (dir: SynologyService.FileItem) => {
+    setSelectedFirstLevel(dir);
   };
   
-  // Filter drivers by search query
-  const getFilteredSubCategories = () => {
-    if (!activeCategoryData) return [];
-    
-    if (!searchQuery) return activeCategoryData.subCategories;
-    
-    return activeCategoryData.subCategories.map(subCat => ({
-      ...subCat,
-      items: subCat.items.filter(driver => 
-        driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        driver.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    })).filter(subCat => subCat.items.length > 0);
+  // 处理二级目录点击
+  const handleSecondLevelClick = (dir: SynologyService.FileItem) => {
+    setSelectedSecondLevel(dir);
   };
   
-  const filteredSubCategories = getFilteredSubCategories();
+  // 处理三级项目点击
+  const handleThirdLevelClick = async (item: SynologyService.FileItem) => {
+    // 如果是文件夹，则进入该文件夹
+    if (item.isdir) {
+      try {
+        setLoading(true);
+        
+        // 更新面包屑
+        if (selectedFirstLevel && selectedSecondLevel) {
+          setBreadcrumbs([...breadcrumbs, { name: item.name, path: item.path }]);
+        }
+        
+        // 获取该文件夹下的文件列表
+        const items = await SynologyService.listFiles(item.path);
+        setThirdLevelItems(items);
+        
+      } catch (err) {
+        if (err instanceof SynologyService.SynologyApiError) {
+          setError(`加载文件夹内容失败: ${err.message}`);
+        } else {
+          setError('加载文件夹内容失败');
+        }
+        console.error('加载文件夹内容异常:', err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // 如果是文件，则显示详情
+      setSelectedFile(item);
+    }
+  };
+  
+  // 处理下载
+  const handleDownload = async (file: SynologyService.FileItem) => {
+    try {
+      const downloadLink = await SynologyService.getDownloadLink(file.path);
+      // 创建一个临时的a标签来触发下载
+      const link = document.createElement('a');
+      link.href = downloadLink;
+      link.setAttribute('download', file.name);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('下载文件异常:', error);
+      alert('下载文件失败，请重试');
+    }
+  };
+  
+  // 刷新数据
+  const handleRefresh = async () => {
+    if (selectedSecondLevel) {
+      setLoading(true);
+      try {
+        const items = await SynologyService.getThirdLevelItems(selectedSecondLevel.path);
+        setThirdLevelItems(items);
+        setError(null);
+      } catch (err) {
+        if (err instanceof SynologyService.SynologyApiError) {
+          setError(`刷新数据失败: ${err.message}`);
+        } else {
+          setError('刷新数据失败');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+  
+  // 处理面包屑导航点击
+  const handleBreadcrumbClick = async (path: string, index: number) => {
+    try {
+      setLoading(true);
+      
+      // 根据点击的面包屑级别重置状态
+      if (index === 0) {
+        // 点击根目录，重置所有状态
+        const firstLevel = await SynologyService.getFirstLevelDirectories();
+        setFirstLevelDirs(firstLevel);
+        
+        if (firstLevel.length > 0) {
+          setSelectedFirstLevel(firstLevel[0]);
+        } else {
+          setSelectedFirstLevel(null);
+        }
+        
+        setSecondLevelDirs([]);
+        setThirdLevelItems([]);
+        setSelectedSecondLevel(null);
+        setBreadcrumbs([{ name: '根目录', path: SynologyConfig.ROOT_PATH }]);
+        
+      } else if (index === 1) {
+        // 点击一级目录，重置二级和三级状态
+        const firstLevel = firstLevelDirs.find(dir => dir.path === path);
+        if (firstLevel) {
+          setSelectedFirstLevel(firstLevel);
+        }
+        
+      } else if (index === 2) {
+        // 点击二级目录，只重置三级状态
+        const secondLevel = secondLevelDirs.find(dir => dir.path === path);
+        if (secondLevel) {
+          setSelectedSecondLevel(secondLevel);
+        }
+      } else if (index >= 3) {
+        // 点击更深层级，加载该路径的内容
+        try {
+          const items = await SynologyService.listFiles(path);
+          setThirdLevelItems(items);
+          
+          // 更新面包屑，保留前面的路径
+          setBreadcrumbs(breadcrumbs.slice(0, index + 1));
+        } catch (err) {
+          console.error('加载路径内容异常:', err);
+          if (err instanceof SynologyService.SynologyApiError) {
+            setError(`加载路径内容失败: ${err.message}`);
+          } else {
+            setError('加载路径内容失败');
+          }
+        }
+      }
+    } catch (err) {
+      if (err instanceof SynologyService.SynologyApiError) {
+        setError(`导航失败: ${err.message}`);
+      } else {
+        setError('导航失败');
+      }
+      console.error('导航异常:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // 渲染文件视图
+  const renderFileView = () => {
+    if (viewMode === 'list') {
+      return (
+        <FileList
+          files={filteredAndSortedFiles}
+          loading={loading}
+          error={error}
+          searchQuery={searchQuery}
+          onFileClick={handleThirdLevelClick}
+          onDownload={handleDownload}
+          onClearSearch={() => setSearchQuery('')}
+        />
+      );
+    } else if (viewMode === 'grid') {
+      return (
+        <FileGridView
+          files={filteredAndSortedFiles}
+          onFileClick={handleThirdLevelClick}
+          onDownload={handleDownload}
+        />
+      );
+    } else {
+      // 大图标视图
+      return (
+        <div className="space-y-3">
+          {filteredAndSortedFiles.map(file => (
+            <FileLargeCard
+              key={file.path}
+              file={file}
+              onClick={handleThirdLevelClick}
+              onDownload={handleDownload}
+            />
+          ))}
+        </div>
+      );
+    }
+  };
+  
+  // 清除搜索
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+  
+  // 处理视图模式变化
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+  };
+  
+  // 处理排序变化
+  const handleSortChange = (type: SortType, direction: SortDirection) => {
+    setSortType(type);
+    setSortDirection(direction);
+  };
+  
+  // 如果正在初始加载，显示全屏加载动画
+  if (initialLoading) {
+    return <FullScreenLoader text="正在连接到Synology NAS..." />;
+  }
   
   return (
     <div className="ultrawide-layout">
@@ -402,90 +395,123 @@ export default function DriverPage() {
           <div className="flex items-center">
             <div className="brand-logo">
               <span className="brand-dot"></span>
-              <span>驱动下载</span>
+              <span>{SynologyConfig.PAGE_TITLES.main}</span>
             </div>
-            <span className="text-sm text-gray-500 ml-3">提供各硬件设备的驱动程序下载</span>
-          </div>
-        </div>
-        
-        {/* 搜索和筛选工具栏 */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={16} className="text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="搜索驱动程序..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-white w-full border border-gray-200 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent"
-            />
+            <span className="text-sm text-gray-500 ml-3">{SynologyConfig.PAGE_DESCRIPTION}</span>
           </div>
           
-          <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-            <Filter size={16} className="text-gray-500" />
-            <select 
-              value={osFilter}
-              onChange={(e) => setOsFilter(e.target.value)}
-              className="bg-transparent border-none text-gray-700 focus:outline-none text-sm"
-            >
-              <option value="all">所有系统</option>
-              <option value="Windows">Windows</option>
-              <option value="麒麟">麒麟</option>
-              <option value="UOS">UOS</option>
-            </select>
-          </div>
+          <button 
+            onClick={handleRefresh}
+            className="flex items-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
+            disabled={loading}
+          >
+            {loading ? (
+              <InlineLoader text="刷新中" />
+            ) : (
+              <>
+                <RefreshCw size={14} className="mr-1" />
+                刷新
+              </>
+            )}
+          </button>
         </div>
         
-        {/* 主分类选项卡 */}
-        <div className="mb-6 overflow-x-auto">
-          <div className="flex space-x-2 border-b border-gray-200">
-            {driverCategories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center ${
-                  activeCategory === category.id
-                    ? 'text-brand-red border-b-2 border-brand-red'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <category.icon size={16} className={`mr-1.5 ${category.color}`} />
-                {category.name}
-              </button>
-            ))}
-          </div>
+        {/* 面包屑导航 */}
+        <Breadcrumbs 
+          items={breadcrumbs}
+          onItemClick={handleBreadcrumbClick}
+        />
+        
+        {/* 搜索和视图选择器 */}
+        <div className="mb-6 flex flex-col md:flex-row gap-3 items-center">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            className="flex-1"
+          />
+          
+          <ViewSelector 
+            viewMode={viewMode}
+            sortType={sortType}
+            sortDirection={sortDirection}
+            onViewModeChange={handleViewModeChange}
+            onSortChange={handleSortChange}
+          />
         </div>
         
-        {/* 子分类和驱动项 */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          {activeCategoryData && (
-            <>
-              <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <activeCategoryData.icon size={20} className={`mr-2 ${activeCategoryData.color}`} />
-                {activeCategoryData.name}驱动下载
-              </h2>
-              
-              {filteredSubCategories.length > 0 ? (
-                filteredSubCategories.map(subCategory => (
-                  <DriverSubCategory
-                    key={subCategory.id}
-                    subCategory={subCategory}
-                    osFilter={osFilter}
-                    expanded={Boolean(expandedSubCategories[subCategory.id])}
-                    toggleExpand={() => toggleSubCategory(subCategory.id)}
-                  />
-                ))
+        {/* 主体内容 */}
+        <div className="flex flex-1 gap-6 overflow-hidden">
+          {/* 左侧一级目录 */}
+          <DirectorySidebar
+            directories={firstLevelDirs}
+            selectedDirectory={selectedFirstLevel}
+            loading={loading && firstLevelDirs.length === 0}
+            onDirectorySelect={handleFirstLevelClick}
+            title={SynologyConfig.PAGE_TITLES.firstLevel}
+          />
+          
+          {/* 中间内容区 */}
+          <div className="flex-1 flex flex-col">
+            {/* 二级目录 Tab */}
+            <TabNavigation
+              tabs={secondLevelDirs}
+              selectedTab={selectedSecondLevel}
+              loading={loading && secondLevelDirs.length === 0}
+              onTabSelect={handleSecondLevelClick}
+            />
+            
+            {/* 错误提示 */}
+            {error && (
+              <ErrorMessage 
+                message={error} 
+                onRetry={handleRefresh}
+                className="mb-4"
+              />
+            )}
+            
+            {/* 文件列表 */}
+            <div className="bg-white rounded-xl border border-gray-100 p-5 flex-1 overflow-y-auto">
+              {loading && thirdLevelItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64">
+                  <FullScreenLoader text="加载文件中..." transparent={true} />
+                </div>
+              ) : filteredAndSortedFiles.length > 0 ? (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                    <HardDrive size={20} className="mr-2 text-brand-red" />
+                    {selectedSecondLevel?.name || '文件列表'}
+                  </h2>
+                  
+                  {renderFileView()}
+                </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">没有找到匹配的驱动程序</p>
+                <div className="flex flex-col items-center justify-center h-64">
+                  <p className="text-gray-500 mb-2">
+                    {searchQuery ? '没有找到匹配的文件' : '当前目录为空'}
+                  </p>
+                  {searchQuery && (
+                    <button
+                      onClick={handleClearSearch}
+                      className="text-brand-red text-sm hover:underline"
+                    >
+                      清除搜索条件
+                    </button>
+                  )}
                 </div>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
       </div>
+      
+      {/* 文件详情模态框 */}
+      {selectedFile && (
+        <FileDetails 
+          file={selectedFile} 
+          onClose={() => setSelectedFile(null)}
+          onDownload={handleDownload}
+        />
+      )}
       
       {/* 页面导航 */}
       <PageNavigator />
