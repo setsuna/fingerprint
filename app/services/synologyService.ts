@@ -3,25 +3,8 @@
 /**
  * Synology File Station API Service
  * 用于连接和访问Synology NAS的File Station API
+ * 通过Next.js API路由代理解决跨域问题
  */
-
-// API 基础URL
-const API_BASE_URL = 'http://192.168.20.249:5000';
-
-// API 端点
-const API_ENDPOINTS = {
-  AUTH: '/webapi/auth.cgi',
-  FILE_STATION: '/webapi/entry.cgi',
-};
-
-// 账号信息
-const CREDENTIALS = {
-  username: 'zs',
-  password: 'Zz13173632655',
-};
-
-// Session ID
-let sid: string | null = null;
 
 /**
  * 获取文件类型图标
@@ -68,54 +51,19 @@ export function getFileIcon(fileName: string): string {
 }
 
 /**
- * 登录到 Synology NAS
- * @returns 登录成功与否的结果
- */
-export async function login(): Promise<boolean> {
-  try {
-    const url = `${API_BASE_URL}${API_ENDPOINTS.AUTH}?api=SYNO.API.Auth&version=3&method=login&account=${CREDENTIALS.username}&passwd=${CREDENTIALS.password}&session=FileStation&format=json`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      sid = data.data.sid;
-      console.log('登录成功', sid);
-      return true;
-    } else {
-      console.error('登录失败:', data.error);
-      return false;
-    }
-  } catch (error) {
-    console.error('登录异常:', error);
-    return false;
-  }
-}
-
-/**
  * 登出 Synology NAS
  */
 export async function logout(): Promise<void> {
-  if (!sid) return;
-  
   try {
-    const url = `${API_BASE_URL}${API_ENDPOINTS.AUTH}?api=SYNO.API.Auth&version=1&method=logout&session=FileStation&_sid=${sid}`;
-    
-    await fetch(url, {
-      method: 'GET',
+    const params = new URLSearchParams({
+      endpoint: 'auth',
+      api: 'SYNO.API.Auth',
+      version: '1',
+      method: 'logout',
+      session: 'FileStation'
     });
     
-    sid = null;
+    await fetch(`/api/synology?${params.toString()}`, { method: 'GET' });
   } catch (error) {
     console.error('登出异常:', error);
   }
@@ -128,24 +76,16 @@ export async function logout(): Promise<void> {
  */
 export async function listFiles(folderPath: string = '/home/drive'): Promise<any> {
   try {
-    // 如果没有登录或会话已过期，则重新登录
-    if (!sid) {
-      const loggedIn = await login();
-      if (!loggedIn) {
-        throw new Error('无法登录到Synology NAS');
-      }
-    }
-    
     const params = new URLSearchParams({
+      endpoint: 'filestation',
       api: 'SYNO.FileStation.List',
       version: '2',
       method: 'list',
       folder_path: folderPath,
-      additional: 'size,time,type',
-      _sid: sid as string
+      additional: 'size,time,type'
     });
     
-    const url = `${API_BASE_URL}${API_ENDPOINTS.FILE_STATION}?${params.toString()}`;
+    const url = `/api/synology?${params.toString()}`;
     
     const response = await fetch(url, {
       method: 'GET',
@@ -155,11 +95,6 @@ export async function listFiles(folderPath: string = '/home/drive'): Promise<any
     });
     
     if (!response.ok) {
-      // 如果返回401或403，可能是会话已过期，尝试重新登录
-      if (response.status === 401 || response.status === 403) {
-        sid = null;
-        return listFiles(folderPath); // 递归调用自身，重新登录并获取文件列表
-      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
@@ -168,7 +103,7 @@ export async function listFiles(folderPath: string = '/home/drive'): Promise<any
     if (data.success) {
       return data.data.files;
     } else {
-      throw new Error(`API error: ${data.error.code}`);
+      throw new Error(`API error: ${data.error?.code}`);
     }
   } catch (error) {
     console.error('获取文件列表异常:', error);
@@ -183,25 +118,17 @@ export async function listFiles(folderPath: string = '/home/drive'): Promise<any
  */
 export async function getDownloadLink(filePath: string): Promise<string> {
   try {
-    // 如果没有登录或会话已过期，则重新登录
-    if (!sid) {
-      const loggedIn = await login();
-      if (!loggedIn) {
-        throw new Error('无法登录到Synology NAS');
-      }
-    }
-    
     const params = new URLSearchParams({
+      endpoint: 'filestation',
       api: 'SYNO.FileStation.Download',
       version: '2',
       method: 'download',
       path: filePath,
-      mode: 'download',
-      _sid: sid as string
+      mode: 'download'
     });
     
-    // 返回完整的下载URL
-    return `${API_BASE_URL}${API_ENDPOINTS.FILE_STATION}?${params.toString()}`;
+    // 返回代理API的下载URL
+    return `/api/synology?${params.toString()}`;
   } catch (error) {
     console.error('获取下载链接异常:', error);
     throw error;

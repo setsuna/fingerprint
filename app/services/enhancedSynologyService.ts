@@ -64,118 +64,26 @@ export class SynologyApiError extends Error {
 
 /**
  * 会话管理
+ * 注意：现在不再直接管理会话，而是由服务器端 API 代理处理
  */
 class SessionManager {
-  private sid: string | null = null;
-  private loginPromise: Promise<string> | null = null;
-  
   /**
-   * 获取会话ID
-   */
-  async getSid(): Promise<string> {
-    if (this.sid) {
-      return this.sid;
-    }
-    
-    // 如果已经有一个登录过程在进行，等待它完成
-    if (this.loginPromise) {
-      return this.loginPromise;
-    }
-    
-    // 开始新的登录过程
-    this.loginPromise = this.login();
-    
-    try {
-      this.sid = await this.loginPromise;
-      return this.sid;
-    } finally {
-      this.loginPromise = null;
-    }
-  }
-  
-  /**
-   * 清除会话ID
-   */
-  clearSid(): void {
-    this.sid = null;
-  }
-  
-  /**
-   * 设置会话ID
-   */
-  setSid(sid: string): void {
-    this.sid = sid;
-  }
-  
-  /**
-   * 登录到Synology NAS
-   */
-  private async login(): Promise<string> {
-    const { API_BASE_URL, API_ENDPOINTS, CREDENTIALS } = SynologyConfig;
-    
-    const params = new URLSearchParams({
-      api: 'SYNO.API.Auth',
-      version: '3',
-      method: 'login',
-      account: CREDENTIALS.username,
-      passwd: CREDENTIALS.password,
-      session: 'FileStation',
-      format: 'json'
-    });
-    
-    const url = `${API_BASE_URL}${API_ENDPOINTS.AUTH}?${params.toString()}`;
-    
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new SynologyApiError(response.status);
-      }
-      
-      const data: SynologyResponse<{ sid: string }> = await response.json();
-      
-      if (!data.success) {
-        throw new SynologyApiError(data.error?.code || 100, data.error?.message);
-      }
-      
-      return data.data!.sid;
-    } catch (error) {
-      if (error instanceof SynologyApiError) {
-        throw error;
-      }
-      throw new SynologyApiError(100, '无法连接到Synology NAS');
-    }
-  }
-  
-  /**
-   * 登出Synology NAS
+   * 登出方法
+   * 调用代理 API 路由处理登出操作
    */
   async logout(): Promise<void> {
-    if (!this.sid) return;
-    
-    const { API_BASE_URL, API_ENDPOINTS } = SynologyConfig;
-    
-    const params = new URLSearchParams({
-      api: 'SYNO.API.Auth',
-      version: '1',
-      method: 'logout',
-      session: 'FileStation',
-      _sid: this.sid
-    });
-    
-    const url = `${API_BASE_URL}${API_ENDPOINTS.AUTH}?${params.toString()}`;
-    
     try {
-      await fetch(url, { method: 'GET' });
+      const params = new URLSearchParams({
+        endpoint: 'auth',
+        api: 'SYNO.API.Auth',
+        version: '1',
+        method: 'logout',
+        session: 'FileStation'
+      });
+      
+      await fetch(`/api/synology?${params.toString()}`, { method: 'GET' });
     } catch (error) {
       console.error('登出异常:', error);
-    } finally {
-      this.sid = null;
     }
   }
 }
@@ -192,15 +100,13 @@ class FileStationClient {
   
   /**
    * 发送 API 请求
+   * 现在通过 Next.js API 代理路由发送请求
    */
   private async sendRequest<T>(params: URLSearchParams): Promise<T> {
-    const { API_BASE_URL, API_ENDPOINTS } = SynologyConfig;
+    // 添加 endpoint 参数表明请求目标
+    params.append('endpoint', 'filestation');
     
-    // 获取会话 ID
-    const sid = await this.sessionManager.getSid();
-    params.append('_sid', sid);
-    
-    const url = `${API_BASE_URL}${API_ENDPOINTS.FILE_STATION}?${params.toString()}`;
+    const url = `/api/synology?${params.toString()}`;
     
     try {
       const response = await fetch(url, {
@@ -211,24 +117,12 @@ class FileStationClient {
       });
       
       if (!response.ok) {
-        // 如果返回401或403，可能是会话已过期
-        if (response.status === 401 || response.status === 403) {
-          this.sessionManager.clearSid();
-          // 重新尝试
-          return this.sendRequest<T>(params);
-        }
         throw new SynologyApiError(response.status);
       }
       
       const data: SynologyResponse<T> = await response.json();
       
       if (!data.success) {
-        // 如果会话过期，重新登录并重试
-        if (data.error?.code === 105 || data.error?.code === 106) {
-          this.sessionManager.clearSid();
-          // 重新尝试
-          return this.sendRequest<T>(params);
-        }
         throw new SynologyApiError(data.error?.code || 100, data.error?.message);
       }
       
@@ -237,6 +131,11 @@ class FileStationClient {
       if (error instanceof SynologyApiError) {
         throw error;
       }
+      
+      if (error instanceof Error) {
+        throw new SynologyApiError(100, error.message);
+      }
+      
       throw new SynologyApiError(100, '请求发送失败');
     }
   }
@@ -275,23 +174,19 @@ class FileStationClient {
   
   /**
    * 获取文件下载链接
+   * 直接返回我们的代理 API 路径
    */
   async getDownloadLink(filePath: string): Promise<string> {
-    // 获取会话ID
-    const sid = await this.sessionManager.getSid();
-    
-    const { API_BASE_URL, API_ENDPOINTS } = SynologyConfig;
-    
     const params = new URLSearchParams({
+      endpoint: 'filestation',
       api: 'SYNO.FileStation.Download',
       version: '2',
       method: 'download',
       path: filePath,
-      mode: 'download',
-      _sid: sid
+      mode: 'download'
     });
     
-    return `${API_BASE_URL}${API_ENDPOINTS.FILE_STATION}?${params.toString()}`;
+    return `/api/synology?${params.toString()}`;
   }
   
   /**
