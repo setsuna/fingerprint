@@ -384,7 +384,7 @@ export default function DriverPage() {
   
   // 如果正在初始加载，显示全屏加载动画
   if (initialLoading) {
-    return <FullScreenLoader text="正在连接到Synology NAS..." />;
+    return <FullScreenLoader text="正在连接到 NAS..." />;
   }
   
   return (

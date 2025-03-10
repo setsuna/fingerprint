@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Fingerprint, CreditCard, Camera, Code, Download } from 'lucide-react'
+import { Fingerprint, CreditCard, Camera, Code, Download,X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import PageNavigator from '@/app/components/PageNavigator'
 
 export default function Home() {
-  
+  const [showModal, setShowModal] = useState<boolean>(false);
   const features = [
     {
       icon: Fingerprint,
@@ -55,9 +55,7 @@ export default function Home() {
           
           <button 
             className="flex items-center text-sm bg-[#2EA44F] hover:bg-[#2C974B] text-white px-3 py-1.5 rounded-full transition-colors"
-            onClick={() => {
-              alert('查看源代码功能');
-            }}
+            onClick={() => setShowModal(true)}
           >
             <Code size={14} className="mr-1" />
             查看源码
@@ -182,6 +180,48 @@ export default function Home() {
       
       {/* 页面导航 */}
       <PageNavigator />
+      {/* 源码技术选择模态框 */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-96 max-w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">选择技术栈</h3>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  className="p-4 border rounded-lg hover:bg-blue-50 transition-colors flex flex-col items-center"
+                  onClick={() => {
+                    alert('查看 React 技术栈源码');
+                    setShowModal(false);
+                  }}
+                >
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white mb-2">R</div>
+                  <span className="font-medium">React</span>
+                </button>
+                
+                <button 
+                  className="p-4 border rounded-lg hover:bg-green-50 transition-colors flex flex-col items-center"
+                  onClick={() => {
+                    alert('查看 Vue 技术栈源码');
+                    setShowModal(false);
+                  }}
+                >
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white mb-2">V</div>
+                  <span className="font-medium">Vue</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

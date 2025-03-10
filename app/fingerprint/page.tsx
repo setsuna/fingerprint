@@ -170,15 +170,6 @@ export default function FingerprintPage() {
             <span className="text-sm text-gray-500 ml-3">采集、比对和识别指纹</span>
           </div>
           
-          <button 
-            className="flex items-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
-            onClick={() => {
-              alert('查看源代码功能');
-            }}
-          >
-            <Code size={14} className="mr-1" />
-            查看源码
-          </button>
         </div>
         
         {/* 主要内容区 - 使用table布局以支持Chrome 102 */}
@@ -356,17 +347,10 @@ export default function FingerprintPage() {
                   </div>
                   
                   <div className="space-y-3 mt-5">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-xs text-gray-500 mb-1">设备状态</div>
-                      <div className="font-medium flex items-center">
-                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                        已连接
-                      </div>
-                    </div>
                     
                     <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-xs text-gray-500 mb-1">固件版本</div>
-                      <div className="font-medium">v2.5.1</div>
+                      <div className="text-xs text-gray-500 mb-1">固件最新版本</div>
+                      <div className="font-medium">v---</div>
                     </div>
                   </div>
                 </div>

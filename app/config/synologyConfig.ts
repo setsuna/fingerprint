@@ -56,7 +56,7 @@ export const SynologyConfig = {
     },
     
     // 页面描述
-    PAGE_DESCRIPTION: '通过Synology NAS获取驱动程序和文档',
+    PAGE_DESCRIPTION: '获取驱动程序和文档',
   };
   
   export default SynologyConfig;

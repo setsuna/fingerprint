@@ -99,15 +99,6 @@ export default function IdCardPage() {
             <span className="text-sm text-gray-500 ml-3">读取和验证身份证信息</span>
           </div>
           
-          <button 
-            className="flex items-center text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition-colors"
-            onClick={() => {
-              alert('查看源代码功能');
-            }}
-          >
-            <Code size={14} className="mr-1" />
-            查看源码
-          </button>
         </div>
         
         <div className="w-full overflow-auto" style={{display: 'table'}}>
